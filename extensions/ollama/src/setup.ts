@@ -524,14 +524,28 @@ export async function promptAndConfigureOllama(params: {
       secretInputMode: params.secretInputMode,
       allowSecretRefPrompt: params.allowSecretRefPrompt,
     });
+    const { reachable, models: discoveredModels } = await fetchOllamaModels(OLLAMA_CLOUD_BASE_URL);
+    const enrichedModels =
+      reachable && discoveredModels.length > 0
+        ? await enrichOllamaModelsWithContext(
+            OLLAMA_CLOUD_BASE_URL,
+            discoveredModels.slice(0, OLLAMA_CONTEXT_ENRICH_LIMIT),
+          )
+        : [];
+    const discoveredModelsByName = new Map(enrichedModels.map((model) => [model.name, model]));
+    const discoveredModelNames = discoveredModels.map((model) => model.name);
+    const modelNames =
+      discoveredModelNames.length > 0
+        ? mergeUniqueModelNames(OLLAMA_SUGGESTED_MODELS_CLOUD, discoveredModelNames)
+        : OLLAMA_SUGGESTED_MODELS_CLOUD;
     return {
       credential,
       credentialMode,
       config: applyOllamaProviderConfig(
         params.cfg,
         OLLAMA_CLOUD_BASE_URL,
-        OLLAMA_SUGGESTED_MODELS_CLOUD,
-        undefined,
+        modelNames,
+        discoveredModelsByName,
         credential,
       ),
     };
