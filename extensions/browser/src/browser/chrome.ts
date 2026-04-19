@@ -238,6 +238,12 @@ async function canRunCdpHealthCommand(
     });
     let settled = false;
     const onMessage = (raw: Parameters<typeof rawDataToString>[0]) => {
+      // Defensive guard against races where finish() has already resolved
+      // the outer promise (e.g. from the timer or a concurrent 'close'
+      // event) but a trailing message is still in-flight. Under the
+      // current code, ws.off('message', onMessage) is called inside
+      // finish() so post-settled invocations are structurally unreachable.
+      /* c8 ignore next 3 */
       if (settled) {
         return;
       }
@@ -288,6 +294,10 @@ async function canRunCdpHealthCommand(
           }),
         );
       } catch {
+        // ws.send throws synchronously only when the socket is closing
+        // or closed, which cannot happen between the 'open' event firing
+        // and this synchronous send call in the same tick. Defensive.
+        /* c8 ignore next */
         finish(false);
       }
     });
