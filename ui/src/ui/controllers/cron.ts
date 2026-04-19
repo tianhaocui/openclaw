@@ -615,7 +615,7 @@ function buildFailureAlert(form: CronFormState) {
   const accountId = form.failureAlertAccountId.trim();
   const patch: Record<string, unknown> = {
     after: after > 0 ? Math.floor(after) : undefined,
-    channel: form.failureAlertChannel.trim() || CRON_CHANNEL_LAST,
+    channel: form.failureAlertChannel.trim() || undefined,
     to: form.failureAlertTo.trim() || undefined,
     ...(cooldownMs !== undefined ? { cooldownMs } : {}),
   };
@@ -663,7 +663,7 @@ export async function addCronJob(state: CronState) {
             mode: selectedDeliveryMode,
             channel:
               selectedDeliveryMode === "announce"
-                ? form.deliveryChannel.trim() || "last"
+                ? form.deliveryChannel.trim() || undefined
                 : undefined,
             to: form.deliveryTo.trim() || undefined,
             accountId:
