@@ -813,7 +813,10 @@ export async function runEmbeddedPiAgent(
           mergeUsageIntoAccumulator(usageAccumulator, attemptUsage);
           // Keep prompt size from the latest model call so session totalTokens
           // reflects current context usage, not accumulated tool-loop usage.
-          lastRunPromptUsage = lastAssistantUsage ?? attemptUsage;
+          // Do not fall back to attemptUsage here — it is the accumulated total
+          // across all API calls in the tool-use loop, which double-counts
+          // prompt tokens for providers that report full prompt size per call.
+          lastRunPromptUsage = lastAssistantUsage;
           lastTurnTotal = lastAssistantUsage?.total ?? attemptUsage?.total;
           const attemptCompactionCount = Math.max(0, attempt.compactionCount ?? 0);
           autoCompactionCount += attemptCompactionCount;
