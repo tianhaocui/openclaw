@@ -215,4 +215,26 @@ describe("runEmbeddedPiAgent usage reporting", () => {
     // (input + cacheRead = 5000 + 120000 = 125000), not the accumulated total.
     expect(result.meta.agentMeta?.promptTokens).toBe(125000);
   });
+
+  it("does not reuse stale prompt snapshot when attempt reports no usage", async () => {
+    mockedRunEmbeddedAttempt.mockResolvedValueOnce(
+      makeAttemptResult({
+        assistantTexts: ["Response"],
+        lastAssistant: undefined,
+        attemptUsage: undefined,
+      }),
+    );
+
+    const result = await runEmbeddedPiAgent({
+      sessionId: "test-session",
+      sessionKey: "test-key",
+      sessionFile: "/tmp/session.json",
+      workspaceDir: "/tmp/workspace",
+      prompt: "hello",
+      timeoutMs: 30000,
+      runId: "run-no-usage-at-all",
+    });
+
+    expect(result.meta.agentMeta?.promptTokens).toBeUndefined();
+  });
 });

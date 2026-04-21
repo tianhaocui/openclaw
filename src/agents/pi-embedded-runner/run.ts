@@ -819,9 +819,10 @@ export async function runEmbeddedPiAgent(
           // reflects current context usage, not accumulated tool-loop usage.
           // Prefer per-message usage from the final assistant; fall back to the
           // accumulator's last-call snapshot which tracks the single most recent
-          // API call.  Do not fall back to attemptUsage — it is the accumulated
-          // total across all API calls in the tool-use loop.
-          lastRunPromptUsage = lastAssistantUsage ?? toLastCallUsage(usageAccumulator);
+          // API call.  Guard on attemptUsage so we don't reuse a stale snapshot
+          // from a previous attempt when this one reported no usage at all.
+          lastRunPromptUsage =
+            lastAssistantUsage ?? (attemptUsage ? toLastCallUsage(usageAccumulator) : undefined);
           lastTurnTotal = lastAssistantUsage?.total ?? attemptUsage?.total;
           const attemptCompactionCount = Math.max(0, attempt.compactionCount ?? 0);
           autoCompactionCount += attemptCompactionCount;
