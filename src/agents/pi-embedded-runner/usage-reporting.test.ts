@@ -191,4 +191,26 @@ describe("runEmbeddedPiAgent usage reporting", () => {
     // If the bug exists, it will likely be 350
     expect(usage?.total).toBe(200);
   });
+
+  it("does not leak attemptUsage into promptTokens when lastAssistant is undefined", async () => {
+    mockedRunEmbeddedAttempt.mockResolvedValueOnce(
+      makeAttemptResult({
+        assistantTexts: ["Response"],
+        lastAssistant: undefined,
+        attemptUsage: { input: 5000, output: 200, cacheRead: 120000, total: 125200 },
+      }),
+    );
+
+    const result = await runEmbeddedPiAgent({
+      sessionId: "test-session",
+      sessionKey: "test-key",
+      sessionFile: "/tmp/session.json",
+      workspaceDir: "/tmp/workspace",
+      prompt: "hello",
+      timeoutMs: 30000,
+      runId: "run-no-assistant-usage",
+    });
+
+    expect(result.meta.agentMeta?.promptTokens).toBeUndefined();
+  });
 });
