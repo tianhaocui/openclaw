@@ -192,7 +192,7 @@ describe("runEmbeddedPiAgent usage reporting", () => {
     expect(usage?.total).toBe(200);
   });
 
-  it("does not leak attemptUsage into promptTokens when lastAssistant is undefined", async () => {
+  it("falls back to last-call usage for promptTokens when lastAssistant is undefined", async () => {
     mockedRunEmbeddedAttempt.mockResolvedValueOnce(
       makeAttemptResult({
         assistantTexts: ["Response"],
@@ -211,6 +211,8 @@ describe("runEmbeddedPiAgent usage reporting", () => {
       runId: "run-no-assistant-usage",
     });
 
-    expect(result.meta.agentMeta?.promptTokens).toBeUndefined();
+    // promptTokens should derive from the accumulator's last-call snapshot
+    // (input + cacheRead = 5000 + 120000 = 125000), not the accumulated total.
+    expect(result.meta.agentMeta?.promptTokens).toBe(125000);
   });
 });
