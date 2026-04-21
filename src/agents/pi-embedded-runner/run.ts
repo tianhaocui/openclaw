@@ -131,11 +131,7 @@ import type {
   ToolSummaryTrace,
   EmbeddedRunLivenessState,
 } from "./types.js";
-import {
-  createUsageAccumulator,
-  mergeUsageIntoAccumulator,
-  toLastCallUsage,
-} from "./usage-accumulator.js";
+import { createUsageAccumulator, mergeUsageIntoAccumulator } from "./usage-accumulator.js";
 
 type ApiKeyInfo = ResolvedProviderAuth;
 
@@ -817,12 +813,12 @@ export async function runEmbeddedPiAgent(
           mergeUsageIntoAccumulator(usageAccumulator, attemptUsage);
           // Keep prompt size from the latest model call so session totalTokens
           // reflects current context usage, not accumulated tool-loop usage.
-          // Prefer per-message usage from the final assistant; fall back to the
-          // accumulator's last-call snapshot which tracks the single most recent
-          // API call.  Guard on attemptUsage so we don't reuse a stale snapshot
-          // from a previous attempt when this one reported no usage at all.
-          lastRunPromptUsage =
-            lastAssistantUsage ?? (attemptUsage ? toLastCallUsage(usageAccumulator) : undefined);
+          // Only use per-message usage from the final assistant message — it is
+          // the only non-accumulated source.  attemptUsage and the accumulator's
+          // last-call fields both carry accumulated totals after merge, so they
+          // would inflate promptTokens for providers that report full prompt
+          // size per call.
+          lastRunPromptUsage = lastAssistantUsage;
           lastTurnTotal = lastAssistantUsage?.total ?? attemptUsage?.total;
           const attemptCompactionCount = Math.max(0, attempt.compactionCount ?? 0);
           autoCompactionCount += attemptCompactionCount;
